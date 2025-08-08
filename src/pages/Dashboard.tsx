@@ -1,179 +1,444 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import Navigation from "@/components/Navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { ChefHat, Apple, TrendingUp, Calendar } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  ChefHat, 
+  Plus, 
+  Calendar, 
+  ShoppingCart, 
+  Sparkles, 
+  Crown, 
+  Loader2,
+  ArrowRight,
+  TrendingUp
+} from 'lucide-react';
+
+interface MealPlan {
+  id: string;
+  title: string;
+  week_start_date: string;
+  meals: any;
+  created_at: string;
+}
+
+interface Recipe {
+  id: string;
+  title: string;
+  description: string;
+  created_at: string;
+  servings: number;
+}
 
 const Dashboard = () => {
-  const [recentNutrition, setRecentNutrition] = useState<any[]>([]);
-  const [recentProgress, setRecentProgress] = useState<any>(null);
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+  
   const [loading, setLoading] = useState(true);
+  const [generatingPlan, setGeneratingPlan] = useState(false);
+  const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
 
   useEffect(() => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    if (!profile?.onboarding_completed) {
+      navigate('/onboarding');
+      return;
+    }
+
+    // Check for payment success/cancellation
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') {
+      toast({
+        title: "Payment successful!",
+        description: "Your subscription has been activated.",
+      });
+    } else if (paymentStatus === 'cancelled') {
+      toast({
+        title: "Payment cancelled",
+        description: "Your subscription was not activated.",
+        variant: "destructive"
+      });
+    }
+
     fetchDashboardData();
-  }, []);
+  }, [user, profile, navigate, searchParams, toast]);
 
   const fetchDashboardData = async () => {
+    if (!user) return;
+    
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      // Fetch recent nutrition logs
-      const { data: nutrition } = await supabase
-        .from("nutrition_logs")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
+      // Fetch recent meal plans
+      const { data: mealPlansData, error: mealPlansError } = await supabase
+        .from('meal_plans')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
         .limit(3);
 
-      // Fetch latest progress entry
-      const { data: progress } = await supabase
-        .from("progress_logs")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("date", { ascending: false })
-        .limit(1)
-        .single();
+      if (mealPlansError && mealPlansError.code !== 'PGRST116') {
+        throw mealPlansError;
+      }
 
-      setRecentNutrition(nutrition || []);
-      setRecentProgress(progress);
+      // Fetch recent recipes
+      const { data: recipesData, error: recipesError } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(4);
+
+      if (recipesError && recipesError.code !== 'PGRST116') {
+        throw recipesError;
+      }
+
+      setMealPlans(mealPlansData || []);
+      setRecipes(recipesData || []);
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+      console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const todayNutrition = recentNutrition.filter(
-    item => new Date(item.date).toDateString() === new Date().toDateString()
-  );
+  const handleGenerateMealPlan = async () => {
+    setGeneratingPlan(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-meal-plan', {
+        body: { preferences: {} }
+      });
 
-  const totalCaloriesToday = todayNutrition.reduce((sum, item) => sum + (item.calories || 0), 0);
+      if (error) throw error;
+
+      if (data.upgrade_required) {
+        toast({
+          title: "Upgrade Required",
+          description: data.error,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Meal Plan Generated!",
+        description: "Your personalized meal plan is ready.",
+      });
+
+      await fetchDashboardData();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate meal plan",
+        variant: "destructive"
+      });
+    } finally {
+      setGeneratingPlan(false);
+    }
+  };
+
+  const handleUpgrade = async (plan: 'pro' | 'premium') => {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { plan }
+      });
+
+      if (error) throw error;
+
+      // Open Stripe checkout in a new tab
+      window.open(data.url, '_blank');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start checkout",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getSubscriptionBadge = () => {
+    const tier = profile?.subscription_tier || 'free';
+    const colors = {
+      free: 'bg-gray-100 text-gray-800',
+      pro: 'bg-blue-100 text-blue-800',
+      premium: 'bg-purple-100 text-purple-800'
+    };
+    
+    return (
+      <Badge className={colors[tier as keyof typeof colors]}>
+        {tier === 'free' ? 'Free' : tier === 'pro' ? 'Pro' : 'Premium'}
+      </Badge>
+    );
+  };
+
+  const getUsageInfo = () => {
+    const planUsed = profile?.monthly_meal_plans_used || 0;
+    const suggestUsed = profile?.monthly_smart_suggests_used || 0;
+    const tier = profile?.subscription_tier || 'free';
+    
+    const limits = {
+      free: { plans: 1, suggests: 1 },
+      pro: { plans: 10, suggests: 999 },
+      premium: { plans: 999, suggests: 999 }
+    };
+    
+    const limit = limits[tier as keyof typeof limits];
+    
+    return { planUsed, suggestUsed, limit };
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const usage = getUsageInfo();
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Welcome to SwiftEatz</h1>
-          <p className="text-muted-foreground mt-2">Track your nutrition and plan your meals</p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Today's Calories</CardTitle>
-              <Apple className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalCaloriesToday}</div>
-              <p className="text-xs text-muted-foreground">
-                {todayNutrition.length} meals logged
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Current Weight</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {recentProgress?.weight_kg ? `${recentProgress.weight_kg} kg` : "Not set"}
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center space-x-3">
+              <ChefHat className="h-8 w-8 text-primary" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">SwiftEatz</h1>
+                <p className="text-sm text-gray-600">Welcome back, {profile?.full_name || user?.email}</p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {recentProgress?.date ? new Date(recentProgress.date).toLocaleDateString() : "No data"}
-              </p>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="flex items-center space-x-4">
+              {getSubscriptionBadge()}
+              <Button variant="outline" onClick={signOut}>
+                Sign Out
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
 
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Usage Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Weekly Meals</CardTitle>
+              <CardTitle className="text-sm font-medium">Meal Plans This Month</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{recentNutrition.length}</div>
+              <div className="text-2xl font-bold">
+                {usage.planUsed} / {usage.limit.plans === 999 ? '∞' : usage.limit.plans}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Last 7 days
+                {usage.limit.plans - usage.planUsed > 0 && usage.limit.plans !== 999
+                  ? `${usage.limit.plans - usage.planUsed} remaining`
+                  : usage.limit.plans === 999 ? 'Unlimited' : 'Limit reached'
+                }
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Meal Planning</CardTitle>
-              <ChefHat className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Smart Suggests</CardTitle>
+              <Sparkles className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <Button asChild className="w-full">
-                <Link to="/meal-planner">Plan Meals</Link>
+              <div className="text-2xl font-bold">
+                {usage.suggestUsed} / {usage.limit.suggests === 999 ? '∞' : usage.limit.suggests}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {usage.limit.suggests === 999 ? 'Unlimited' : 'Monthly usage'}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Saved Recipes</CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{recipes.length}</div>
+              <p className="text-xs text-muted-foreground">Personal collection</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Sparkles className="mr-2 h-5 w-5 text-primary" />
+                Generate Meal Plan
+              </CardTitle>
+              <CardDescription>
+                Create an AI-powered weekly meal plan based on your preferences
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={handleGenerateMealPlan} 
+                disabled={generatingPlan || (usage.planUsed >= usage.limit.plans && usage.limit.plans !== 999)}
+                className="w-full"
+              >
+                {generatingPlan ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    Generate Plan
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/nutrition')}>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Plus className="mr-2 h-5 w-5 text-primary" />
+                Add Recipe
+              </CardTitle>
+              <CardDescription>
+                Create or import new recipes to your collection
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full">
+                Manage Recipes
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/meal-planner')}>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <ShoppingCart className="mr-2 h-5 w-5 text-primary" />
+                Meal Planner
+              </CardTitle>
+              <CardDescription>
+                View and manage your meal plans and grocery lists
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full">
+                View Meal Plans
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <Card>
             <CardHeader>
-              <CardTitle>Recent Meals</CardTitle>
+              <CardTitle>Recent Meal Plans</CardTitle>
+              <CardDescription>Your latest AI-generated meal plans</CardDescription>
             </CardHeader>
             <CardContent>
-              {recentNutrition.length > 0 ? (
+              {mealPlans.length > 0 ? (
                 <div className="space-y-3">
-                  {recentNutrition.slice(0, 3).map((item) => (
-                    <div key={item.id} className="flex justify-between items-center">
+                  {mealPlans.map((plan) => (
+                    <div key={plan.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
-                        <p className="font-medium">{item.food_item}</p>
-                        <p className="text-sm text-muted-foreground">{item.meal_type}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium">{item.calories} cal</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(item.date).toLocaleDateString()}
+                        <p className="font-medium">{plan.title}</p>
+                        <p className="text-sm text-gray-600">
+                          Week of {new Date(plan.week_start_date).toLocaleDateString()}
                         </p>
                       </div>
+                      <Button size="sm" variant="ghost" onClick={() => navigate('/meal-planner')}>
+                        View
+                      </Button>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-muted-foreground">No meals logged yet</p>
+                <div className="text-center py-6">
+                  <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                  <p className="text-gray-600">No meal plans yet</p>
+                  <p className="text-sm text-gray-500">Generate your first meal plan above</p>
+                </div>
               )}
-              <Button asChild variant="outline" className="w-full mt-4">
-                <Link to="/nutrition">View All Nutrition</Link>
-              </Button>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
+              <CardTitle>Recipe Collection</CardTitle>
+              <CardDescription>Your saved recipes</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <Button asChild className="w-full">
-                <Link to="/meal-planner">
-                  <ChefHat className="h-4 w-4 mr-2" />
-                  Generate Meal Plan
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/nutrition">
-                  <Apple className="h-4 w-4 mr-2" />
-                  Log Food
-                </Link>
-              </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/progress">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Update Progress
-                </Link>
-              </Button>
+            <CardContent>
+              {recipes.length > 0 ? (
+                <div className="space-y-3">
+                  {recipes.map((recipe) => (
+                    <div key={recipe.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{recipe.title}</p>
+                        <p className="text-sm text-gray-600">Serves {recipe.servings}</p>
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={() => navigate('/nutrition')}>
+                        View
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <ChefHat className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                  <p className="text-gray-600">No recipes yet</p>
+                  <p className="text-sm text-gray-500">Add your first recipe</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
+
+        {/* Upgrade CTA for Free Users */}
+        {profile?.subscription_tier === 'free' && (
+          <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Crown className="mr-2 h-5 w-5 text-primary" />
+                Unlock Premium Features
+              </CardTitle>
+              <CardDescription>
+                Get unlimited meal plans, advanced AI features, and grocery ordering
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button onClick={() => handleUpgrade('pro')} className="flex-1">
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Upgrade to Pro - $29.99/mo
+                </Button>
+                <Button onClick={() => handleUpgrade('premium')} variant="outline" className="flex-1">
+                  <Crown className="mr-2 h-4 w-4" />
+                  Go Premium - $69.99/mo
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );
