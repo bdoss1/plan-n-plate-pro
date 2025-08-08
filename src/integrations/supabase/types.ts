@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_clicks: {
+        Row: {
+          id: string
+          order_url: string
+          partner_name: string
+          status: string | null
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          order_url: string
+          partner_name: string
+          status?: string | null
+          timestamp?: string
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          order_url?: string
+          partner_name?: string
+          status?: string | null
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      meal_plans: {
+        Row: {
+          created_at: string
+          grocery_list: Json | null
+          id: string
+          meals: Json
+          title: string
+          total_estimated_cost: number | null
+          updated_at: string
+          user_id: string
+          week_start_date: string
+        }
+        Insert: {
+          created_at?: string
+          grocery_list?: Json | null
+          id?: string
+          meals: Json
+          title: string
+          total_estimated_cost?: number | null
+          updated_at?: string
+          user_id: string
+          week_start_date: string
+        }
+        Update: {
+          created_at?: string
+          grocery_list?: Json | null
+          id?: string
+          meals?: Json
+          title?: string
+          total_estimated_cost?: number | null
+          updated_at?: string
+          user_id?: string
+          week_start_date?: string
+        }
+        Relationships: []
+      }
       nutrition_logs: {
         Row: {
           calories: number
@@ -58,40 +121,73 @@ export type Database = {
       }
       profiles: {
         Row: {
+          allergies: string[] | null
+          budget_range: string | null
+          cooking_skill_level: string | null
           created_at: string
+          custom_recipes_count: number | null
           date_of_birth: string | null
+          dietary_preferences: string[] | null
           email: string | null
           fitness_goals: string[] | null
           fitness_level: string | null
           full_name: string | null
           height_cm: number | null
+          household_size: number | null
           id: string
+          meals_per_week: number | null
+          monthly_meal_plans_used: number | null
+          monthly_smart_suggests_used: number | null
+          onboarding_completed: boolean | null
+          subscription_tier: string | null
           updated_at: string
           user_id: string
           weight_kg: number | null
         }
         Insert: {
+          allergies?: string[] | null
+          budget_range?: string | null
+          cooking_skill_level?: string | null
           created_at?: string
+          custom_recipes_count?: number | null
           date_of_birth?: string | null
+          dietary_preferences?: string[] | null
           email?: string | null
           fitness_goals?: string[] | null
           fitness_level?: string | null
           full_name?: string | null
           height_cm?: number | null
+          household_size?: number | null
           id?: string
+          meals_per_week?: number | null
+          monthly_meal_plans_used?: number | null
+          monthly_smart_suggests_used?: number | null
+          onboarding_completed?: boolean | null
+          subscription_tier?: string | null
           updated_at?: string
           user_id: string
           weight_kg?: number | null
         }
         Update: {
+          allergies?: string[] | null
+          budget_range?: string | null
+          cooking_skill_level?: string | null
           created_at?: string
+          custom_recipes_count?: number | null
           date_of_birth?: string | null
+          dietary_preferences?: string[] | null
           email?: string | null
           fitness_goals?: string[] | null
           fitness_level?: string | null
           full_name?: string | null
           height_cm?: number | null
+          household_size?: number | null
           id?: string
+          meals_per_week?: number | null
+          monthly_meal_plans_used?: number | null
+          monthly_smart_suggests_used?: number | null
+          onboarding_completed?: boolean | null
+          subscription_tier?: string | null
           updated_at?: string
           user_id?: string
           weight_kg?: number | null
@@ -131,6 +227,60 @@ export type Database = {
           updated_at?: string
           user_id?: string
           weight_kg?: number
+        }
+        Relationships: []
+      }
+      recipes: {
+        Row: {
+          cook_time_minutes: number | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          ingredients: Json
+          instructions: string[]
+          is_ai_generated: boolean | null
+          prep_time_minutes: number | null
+          servings: number | null
+          source_url: string | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cook_time_minutes?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients: Json
+          instructions: string[]
+          is_ai_generated?: boolean | null
+          prep_time_minutes?: number | null
+          servings?: number | null
+          source_url?: string | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cook_time_minutes?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          ingredients?: Json
+          instructions?: string[]
+          is_ai_generated?: boolean | null
+          prep_time_minutes?: number | null
+          servings?: number | null
+          source_url?: string | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
