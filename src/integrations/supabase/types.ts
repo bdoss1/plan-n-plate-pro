@@ -41,6 +41,42 @@ export type Database = {
         }
         Relationships: []
       }
+      grocery_items: {
+        Row: {
+          category: string | null
+          checked: boolean | null
+          created_at: string
+          id: string
+          meal_plan_id: string | null
+          name: string
+          quantity: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          checked?: boolean | null
+          created_at?: string
+          id?: string
+          meal_plan_id?: string | null
+          name: string
+          quantity?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          checked?: boolean | null
+          created_at?: string
+          id?: string
+          meal_plan_id?: string | null
+          name?: string
+          quantity?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       meal_plans: {
         Row: {
           created_at: string
@@ -114,6 +150,39 @@ export type Database = {
           id?: string
           meal_type?: string
           protein_g?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          created_at: string
+          estimated_delivery: string | null
+          id: string
+          items: Json
+          status: string | null
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          estimated_delivery?: string | null
+          id?: string
+          items?: Json
+          status?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          estimated_delivery?: string | null
+          id?: string
+          items?: Json
+          status?: string | null
+          total_amount?: number
           updated_at?: string
           user_id?: string
         }

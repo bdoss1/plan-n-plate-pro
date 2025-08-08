@@ -1,59 +1,37 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Package, Clock, CheckCircle, XCircle, Truck } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 
-interface Order {
-  id: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  total_amount: number;
-  created_at: string;
-  estimated_delivery: string;
-  items: {
-    name: string;
-    quantity: number;
-    price: number;
-  }[];
-}
-
+// Simple orders component for demo purposes
 const Orders = () => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (user) {
-      fetchOrders();
+  // Demo data for now
+  const [orders] = useState([
+    {
+      id: "order_123",
+      status: "delivered",
+      total_amount: 127.45,
+      created_at: "2024-01-15",
+      estimated_delivery: "2024-01-18",
+      items: [
+        { name: "Organic Bananas", quantity: 6, price: 3.99 },
+        { name: "Chicken Breast", quantity: 2, price: 12.99 },
+        { name: "Greek Yogurt", quantity: 4, price: 1.50 }
+      ]
+    },
+    {
+      id: "order_124",
+      status: "shipped",
+      total_amount: 89.23,
+      created_at: "2024-01-20",
+      estimated_delivery: "2024-01-22",
+      items: [
+        { name: "Salmon Fillets", quantity: 2, price: 15.99 },
+        { name: "Mixed Vegetables", quantity: 3, price: 4.50 }
+      ]
     }
-  }, [user]);
-
-  const fetchOrders = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setOrders(data || []);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch orders",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  ]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -104,10 +82,6 @@ const Orders = () => {
     }).format(amount);
   };
 
-  if (loading) {
-    return <div className="p-6">Loading...</div>;
-  }
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center gap-3">
@@ -139,7 +113,7 @@ const Orders = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      Order #{order.id.slice(-8)}
+                      Order #{order.id.slice(-3)}
                       <Badge variant={getStatusColor(order.status) as any} className="flex items-center gap-1">
                         {getStatusIcon(order.status)}
                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}

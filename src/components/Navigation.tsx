@@ -18,11 +18,13 @@ const Navigation = () => {
   };
 
   const navItems = [
-    { path: "/", icon: Home, label: "Dashboard" },
+    { path: "/dashboard", icon: Home, label: "Dashboard" },
     { path: "/meal-planner", icon: ChefHat, label: "Meal Planner" },
     { path: "/nutrition", icon: Apple, label: "Nutrition" },
     { path: "/progress", icon: TrendingUp, label: "Progress" },
     { path: "/profile", icon: User, label: "Profile" },
+    { path: "/grocery-list", icon: ChefHat, label: "Grocery List" },
+    { path: "/orders", icon: Apple, label: "Orders" },
   ];
 
   return (
