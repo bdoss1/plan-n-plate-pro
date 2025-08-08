@@ -127,7 +127,7 @@ const Onboarding = () => {
         description: "Your preferences have been saved. Let's start meal planning!",
       });
       
-      navigate('/');
+      navigate('/dashboard');
     } catch (error) {
       toast({
         title: "Error",
