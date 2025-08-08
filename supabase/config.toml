@@ -1,1 +1,4 @@
 project_id = "vcknhrcezuqeurkypqmc"
+
+[functions.send-digest]
+verify_jwt = false
