@@ -116,19 +116,47 @@ const Dashboard = () => {
     setGeneratingPlan(true);
     
     try {
+      // Use profile data for preferences
+      const preferences = {
+        dietary_preferences: profile?.dietary_preferences || [],
+        allergies: profile?.allergies || [],
+        budget_range: profile?.budget_range || 'moderate',
+        cooking_skill_level: profile?.cooking_skill_level || 'intermediate',
+        household_size: profile?.household_size || 1,
+        meals_per_week: profile?.meals_per_week || 7,
+        calories_per_day: 2000
+      };
+
       const { data, error } = await supabase.functions.invoke('generate-meal-plan', {
-        body: { preferences: {} }
+        body: { preferences }
       });
 
       if (error) throw error;
 
-      if (data.upgrade_required) {
+      if (data?.error) {
         toast({
-          title: "Upgrade Required",
+          title: "Error",
           description: data.error,
           variant: "destructive"
         });
         return;
+      }
+
+      // Parse the meal plan and save to database
+      if (data && data.days) {
+        const { error: insertError } = await supabase
+          .from('meal_plans')
+          .insert({
+            user_id: user.id,
+            title: `Meal Plan - ${new Date().toLocaleDateString()}`,
+            week_start_date: new Date().toISOString().split('T')[0],
+            meals: data,
+            total_estimated_cost: 50.00 // placeholder
+          });
+
+        if (insertError) {
+          console.error('Error saving meal plan:', insertError);
+        }
       }
 
       toast({
