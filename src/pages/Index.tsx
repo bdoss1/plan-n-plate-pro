@@ -11,12 +11,12 @@ const Index = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const userEmail = session?.user?.email ?? null;
       setEmail(userEmail);
-      if (!userEmail) navigate("/auth", { replace: true });
+      if (userEmail) navigate("/", { replace: true });
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
       const userEmail = session?.user?.email ?? null;
       setEmail(userEmail);
-      if (!userEmail) navigate("/auth", { replace: true });
+      if (userEmail) navigate("/", { replace: true });
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
