@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import Navigation from '@/components/Navigation';
 import { 
   ChefHat, 
   Plus, 
@@ -209,28 +210,18 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-primary/10">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <ChefHat className="h-8 w-8 text-primary" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">SwiftEatz</h1>
-                <p className="text-sm text-gray-600">Welcome back, {profile?.full_name || user?.email}</p>
-              </div>
+      <Navigation />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Welcome back, {profile?.full_name || user?.email}!</h1>
+              <p className="text-gray-600 mt-1">Here's your SwiftEatz dashboard</p>
             </div>
-            <div className="flex items-center space-x-4">
-              {getSubscriptionBadge()}
-              <Button variant="outline" onClick={signOut}>
-                Sign Out
-              </Button>
-            </div>
+            {getSubscriptionBadge()}
           </div>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Usage Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -83,14 +84,16 @@ const Orders = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <Package className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-bold">Orders</h1>
-          <p className="text-muted-foreground">Track your grocery orders</p>
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <Package className="h-8 w-8 text-primary" />
+          <div>
+            <h1 className="text-3xl font-bold">Orders</h1>
+            <p className="text-muted-foreground">Track your grocery orders</p>
+          </div>
         </div>
-      </div>
 
       {orders.length === 0 ? (
         <Card>
@@ -160,6 +163,7 @@ const Orders = () => {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 };

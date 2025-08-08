@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -61,14 +62,16 @@ const GroceryList = () => {
   }, {} as Record<string, any[]>);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <ShoppingCart className="h-8 w-8 text-primary" />
-        <div>
-          <h1 className="text-3xl font-bold">Grocery List</h1>
-          <p className="text-muted-foreground">Manage your shopping list</p>
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <ShoppingCart className="h-8 w-8 text-primary" />
+          <div>
+            <h1 className="text-3xl font-bold">Grocery List</h1>
+            <p className="text-muted-foreground">Manage your shopping list</p>
+          </div>
         </div>
-      </div>
 
       {/* Add new item */}
       <Card>
@@ -149,6 +152,7 @@ const GroceryList = () => {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 };
