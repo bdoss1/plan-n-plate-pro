@@ -13,7 +13,7 @@ import { ChefHat, Loader2 } from "lucide-react";
 const MealPlanner = () => {
   const [preferences, setPreferences] = useState({
     dietary_restrictions: "",
-    calories_per_day: "",
+    calories_per_day: "2000",
     meals_per_day: "3",
     cuisine_preference: "",
     allergies: "",
@@ -28,14 +28,8 @@ const MealPlanner = () => {
   };
 
   const generateMealPlan = async () => {
-    if (!preferences.calories_per_day) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter your daily calorie target",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Proceed even if calories_per_day is empty; default handled
+
 
     setLoading(true);
     try {
