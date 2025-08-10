@@ -204,6 +204,7 @@ export type Database = {
           height_cm: number | null
           household_size: number | null
           id: string
+          is_admin: boolean | null
           meals_per_week: number | null
           monthly_meal_plans_used: number | null
           monthly_smart_suggests_used: number | null
@@ -228,6 +229,7 @@ export type Database = {
           height_cm?: number | null
           household_size?: number | null
           id?: string
+          is_admin?: boolean | null
           meals_per_week?: number | null
           monthly_meal_plans_used?: number | null
           monthly_smart_suggests_used?: number | null
@@ -252,6 +254,7 @@ export type Database = {
           height_cm?: number | null
           household_size?: number | null
           id?: string
+          is_admin?: boolean | null
           meals_per_week?: number | null
           monthly_meal_plans_used?: number | null
           monthly_smart_suggests_used?: number | null
@@ -355,10 +358,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      admin_profile_summary: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          onboarding_completed: boolean | null
+          subscription_tier: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          onboarding_completed?: boolean | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          onboarding_completed?: boolean | null
+          subscription_tier?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: { user_id?: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
