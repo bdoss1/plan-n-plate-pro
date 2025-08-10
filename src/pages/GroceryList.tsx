@@ -61,6 +61,21 @@ const GroceryList = () => {
     return acc;
   }, {} as Record<string, any[]>);
 
+  async function openAffiliate(partner: 'instacart'|'walmart'|'amazon', baseUrl: string) {
+  if (!gate.limits.ordering) {
+    setShowUpsell({ title: "Order in 1 Click (Pro & Premium)", body: "Send your list to Instacart, Walmart, or Amazon Fresh. Upgrade to unlock ordering." });
+    return;
+  }
+  const { data: cfg } = await supabase.from('affiliate_config').select('*').eq('id', 1).single();
+  const url = applyAffiliateTracking(partner, baseUrl, {
+    instacart: cfg?.instacart_id || import.meta.env.VITE_AFF_INSTACART_ID,
+    walmart:   cfg?.walmart_id   || import.meta.env.VITE_AFF_WALMART_ID,
+    amazon:    cfg?.amazon_tag   || import.meta.env.VITE_AFF_AMAZON_TAG,
+  });
+  await supabase.from('affiliate_clicks').insert({ user_id: userId, partner_name: partner, order_url: url });
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />

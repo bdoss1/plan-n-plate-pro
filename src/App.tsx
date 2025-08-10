@@ -12,6 +12,8 @@ import Nutrition from "./pages/Nutrition";
 import Progress from "./pages/Progress";
 import Profile from "./pages/Profile";
 import Onboarding from "./pages/Onboarding";
+import AdminIndex from './pages/admin/Index';
+import AdminAffiliatePage from './pages/admin/Affiliate';
 import GroceryList from "./pages/GroceryList";
 import Orders from "./pages/Orders";
 import NotFound from "./pages/NotFound";
@@ -36,6 +38,8 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/grocery-list" element={<GroceryList />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/admin" element={<AdminIndex />} />
+            <Route path="/admin/affiliate" element={<AdminAffiliatePage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
